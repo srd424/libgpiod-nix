@@ -8,10 +8,16 @@
 
   outputs = { self, nixpkgs }: 
   let
-    pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    inherit (nixpkgs) lib;
+    forAllSystems = lib.genAttrs [ "x86_64-linux" "aarch64-linux" ];
   in {
-    packages.x86_64-linux.libgpiod = pkgs.callPackage ./package.nix { };
-    packages.x86_64-linux.default = self.packages.x86_64-linux.libgpiod;
+    packages = forAllSystems (
+      system:
+      {
+        libgpiod = nixpkgs.legacyPackages.${system}.callPackage ./package.nix { enable-dbus = true; };
+        default = self.packages.${system}.libgpiod;
+      }
+    );
 
   };
 }
